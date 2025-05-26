@@ -27,9 +27,9 @@ int main() {
 
   unsigned int current_capacity = INITIAL_CAPACITY;
   unsigned int user_amount = 4;
-
   unsigned short menu_choice = 0;
   bool running = true;
+
   while(running) {
     std::cout << "\n--------------- MENU ---------------\n"
               << "1. Inserir novo usuário\n"
@@ -40,14 +40,34 @@ int main() {
               << "6. Carregar arquivo para a memória\n"
               << "7. Sair e salvar\n\n"
               << "Opção desejada: ";
-    // preciso verificar essa entrada
-    std::cin >> menu_choice;
+
+    // verifição de entrada de menu_choice
+    // get_valid_menu_choice(menu_choice);
+    // talvez eu generalize essas verificações em uma só função
+    while(true) {
+      std::string menu_choice_input;
+      if(std::cin.peek() == '\n') {
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      }
+      if(!getline(std::cin, menu_choice_input)) {
+        std::cout << "Erro ao obter um valor do menu. Tente novamente: ";
+        continue;
+      }
+      if(!is_input_valid(menu_choice_input, 1, 0, false)) {
+        std::cout << "Opção inválida. Tente novamente: ";
+        continue;
+      }
+      menu_choice = static_cast<unsigned short>(std::stoi(menu_choice_input));
+      break;
+    }
+
     switch(menu_choice) {
       case 1: {
         // Inserir novo usuário
         std::string name;
         unsigned short age = 0;
         unsigned long long balance_in_cents = 0;
+
         std::cout << "\n--- Inserir Novo Usuário ---\n";
         // get_user_data(name, age, balance_in_cents);
         // create_user(users, current_capacity, user_amount, name, age, balance_in_cents);
@@ -59,10 +79,34 @@ int main() {
         unsigned short age = 0;
         unsigned long long balance_in_cents = 0;
         unsigned int insert_amount = 0;
+
         std::cout << "\n------------- Inserir Vários Usuários -------------\n"
                   << "Quantidade desejada de usuários a serem inseridos: ";
-        // verificar entrada
-        std::cin >> insert_amount;
+
+        // verifição de entrada de insert_amount
+        // get_valid_insert_amount(insert_amount);
+        while(true) {
+          std::string insert_amount_input;
+          if(std::cin.peek() == '\n') {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+          }
+          if(!getline(std::cin, insert_amount_input)) {
+            std::cout << "Erro ao obter a quantidade. Tente novamente: ";
+            continue;
+          }
+          if(!is_input_valid(insert_amount_input, 4, 0, false)) {
+            std::cout << "Insira uma quantidade válida: ";
+            continue;
+          }
+          // n vai mudar muito em performance, já que é zero overhead
+          insert_amount = static_cast<unsigned int>(std::stoi(insert_amount_input));
+          if(insert_amount == 0) {
+            std::cout << "Insira uma quantidade válida: ";
+            continue;
+          }
+          break;
+        }
+
         for(unsigned int i = 0; i < insert_amount; i++) {
           std::cout << "\n--- Dados para Usuário " << i + 1 << " de " << insert_amount << " ---\n";
           // get_user_data(name, age, balance_in_cents);
@@ -89,14 +133,35 @@ int main() {
         // Transferência entre usuários
         unsigned int sender_id = 0, receiver_id = 0;
         unsigned long long transfer_amount = 0;
+
         std::cout << "\n--- Transferência Entre Usuários ---\n"
                   << "Insira o ID do remetente: ";
         sender_id = get_valid_user_index(users, current_capacity);
         std::cout << "Insira o ID do destinatário: ";
         receiver_id = get_valid_user_index(users, current_capacity);
         std::cout << "Insira a quantidade a ser transferida: ";
+
         // verificar entrada e fazer a formatação
-        std::cin >> transfer_amount;
+        // get_valid_transfer_amount(transfer_amount);
+        while(true) {
+          std::string transfer_amount_input;
+          if(std::cin.peek() == '\n') {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+          }
+          if(!getline(std::cin, transfer_amount_input)) {
+            std::cout << "Erro na leitura do valor de transferência. Tente novamente: ";
+            continue;
+          }
+          if(!is_input_valid(transfer_amount_input, 12, 2, false)) {
+            std::cout << "Valor de transferência inválido. São aceitos valores menores que R$"
+                      << "10.000.000.000,00\n"
+                      << "Por favor, insira um valor válido: ";
+            continue;
+          }
+          transfer_amount = static_cast<unsigned long long>(std::stoll(transfer_amount_input));
+          break;
+        }
+
         // transfer_between_users(users, sender_id, receiver_id, transfer_amount);
         break;
       }
@@ -142,7 +207,9 @@ unsigned int get_valid_user_index(const user* const &users, const unsigned int &
 
   std::string input;
 
-  std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  if(std::cin.peek() == '\n') {
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  }
 
   while (true) {
 
