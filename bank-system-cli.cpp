@@ -11,7 +11,7 @@ typedef struct User {
   unsigned long long balance_in_cents;
 } user;
 
-int read_user_id(const user* const &users, const unsigned int &current_capacity);
+unsigned int get_valid_user_index(const user* const &users, const unsigned int &current_capacity);
 bool is_input_valid(const std::string &input, 
                     const unsigned short int &max_integer_digits, 
                     const unsigned short int &max_decimal_digits,
@@ -26,7 +26,7 @@ int main() {
   }
 
   unsigned int current_capacity = INITIAL_CAPACITY;
-  unsigned int user_amount = 0;
+  unsigned int user_amount = 4;
 
   unsigned short menu_choice = 0;
   bool running = true;
@@ -81,7 +81,7 @@ int main() {
         unsigned int user_id = 0;
         std::cout << "\n--- Buscar Usuário por ID ---\n"
                   << "ID do usuário: ";
-        user_id = read_user_id(users, current_capacity);
+        user_id = get_valid_user_index(users, current_capacity);
         // print_user(users, user_id);
         break;
       }
@@ -91,9 +91,9 @@ int main() {
         unsigned long long transfer_amount = 0;
         std::cout << "\n--- Transferência Entre Usuários ---\n"
                   << "Insira o ID do remetente: ";
-        sender_id = read_user_id(users, current_capacity);
+        sender_id = get_valid_user_index(users, current_capacity);
         std::cout << "Insira o ID do destinatário: ";
-        receiver_id = read_user_id(users, current_capacity);
+        receiver_id = get_valid_user_index(users, current_capacity);
         std::cout << "Insira a quantidade a ser transferida: ";
         // verificar entrada e fazer a formatação
         std::cin >> transfer_amount;
@@ -105,7 +105,7 @@ int main() {
         unsigned int target_user_id;
         std::cout << "\n------ Remoção de Usuário por ID ------\n"
                   << "Insira o ID do usuário a ser removido: ";
-        target_user_id = read_user_id(users, current_capacity);
+        target_user_id = get_valid_user_index(users, current_capacity);
         // remove_user(users, target_user_id);
         break;
       }
@@ -128,49 +128,51 @@ int main() {
   return 0;
 }
 
-int read_user_id(const user* const &users, const unsigned int &current_capacity) {
+unsigned int get_valid_user_index(const user* const &users, const unsigned int &current_capacity) {
 
-  if(users == NULL) {
-    std::cout << "Problema na leitura dos usuários. Abortando o programa...\n";
+  if (users == NULL) { // NULL ou nullptr ?
+    std::cerr << "Erro: problema na leitura dos usuários. Encerrando o programa...\n";
     abort();
   }
 
-  unsigned int user_id = 0;
-  bool valid = false;
+  if(current_capacity == 0) {
+    std::cerr << "Erro: capacidade de usuários é zero. Encerrando o programa...\n";
+    abort();
+  }
+
   std::string input;
 
   std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-  getline(std::cin, input);
 
-  while(!valid) {
-    if(!is_input_valid(input, 4, 0, false)) {
-      std::cout << "ID inválido. Por favor, insira um ID válido: ";
-      getline(std::cin, input);
+  while (true) {
+
+    if (!std::getline(std::cin, input)) {
+      std::cerr << "Erro na leitura de entrada.\n";
       continue;
     }
-    user_id = std::stoi(input);
-    if(user_id == 0) {
+
+    if (!is_input_valid(input, 4, 0, false)) {
       std::cout << "ID inválido. Por favor, insira um ID válido: ";
-      getline(std::cin, input);
       continue;
     }
-    user_id--;
-    if(user_id >= current_capacity) {
+
+    unsigned int user_id = std::stoi(input);
+
+    if (user_id == 0 || user_id > current_capacity) {
       std::cout << "ID inválido. Por favor, insira um ID válido: ";
-      getline(std::cin, input);
       continue;
     }
-    // o id pesquisado pode estar vazio
-    if(users[user_id].name.empty()) {
-      std::cout << "ID inválido. Por favor, insira um ID válido: ";
-      getline(std::cin, input);
+
+    unsigned int user_index = user_id - 1;
+
+    if (users[user_index].name.empty()) {
+      std::cout << "O usuário com ID " << user_id << " não existe.\n"
+                << "Por favor, insira um ID válido: ";
       continue;
     }
-    valid = true;
+
+    return user_index;
   }
-
-  // retorno do id digitado -1 para o vetor
-  return user_id;
 }
 
 /**
