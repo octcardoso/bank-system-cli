@@ -10,8 +10,7 @@ const char INPUT_DELIMITER = '\n';
 
 typedef struct User {
   std::string name;
-  unsigned short age;
-  unsigned long long balance_in_cents;
+  unsigned short age; unsigned long long balance_in_cents;
 } user;
 
 unsigned int get_valid_user_index(const user* const &users, const unsigned int &current_capacity);
@@ -22,10 +21,8 @@ bool is_input_valid(const std::string &input,
 void get_user_data(std::string &name, 
                    unsigned short &age,
                    unsigned long long &balance_in_cents);
-void get_valid_user_name(std::string &name);
-void get_valid_user_age(unsigned short &age);
-void get_valid_user_balance(unsigned long long &balance_in_cents, 
-                            bool &balance_has_cents);
+void get_valid_user_name(std::string &name); void get_valid_user_age(unsigned short &age);
+void get_valid_monetary_value(unsigned long long &balance_in_cents);
 
 int main() {
   // Menu
@@ -89,8 +86,6 @@ int main() {
         std::cout << "\n------------- Inserir Vários Usuários -------------\n"
                   << "Quantidade desejada de usuários a serem inseridos: ";
 
-        // verifição de entrada de insert_amount
-        // get_valid_insert_amount(insert_amount);
         while(true) {
           std::string insert_amount_input;
           if(!getline(std::cin, insert_amount_input, INPUT_DELIMITER)) {
@@ -103,7 +98,6 @@ int main() {
             std::cout << "Insira uma quantidade válida: ";
             continue;
           }
-          // n vai mudar muito em performance, já que é zero overhead
           insert_amount = static_cast<unsigned int>(std::stoi(insert_amount_input));
           if(insert_amount == 0) {
             std::cout << "Insira uma quantidade válida: ";
@@ -146,23 +140,7 @@ int main() {
         receiver_id = get_valid_user_index(users, current_capacity);
         std::cout << "Insira a quantidade a ser transferida: ";
 
-        // verificar entrada e fazer a formatação
-        // get_valid_transfer_amount(transfer_amount);
-        while(true) {
-          std::string transfer_amount_input;
-          if(!getline(std::cin, transfer_amount_input, INPUT_DELIMITER)) {
-            std::cout << "Erro na leitura do valor de transferência. Tente novamente: ";
-            continue;
-          }
-          if(!is_input_valid(transfer_amount_input, 10, 2, false)) {
-            std::cout << "Valor de transferência inválido. São aceitos valores menores que R$"
-                      << "10.000.000.000,00\n"
-                      << "Por favor, insira um valor válido: ";
-            continue;
-          }
-          transfer_amount = static_cast<unsigned long long>(std::stoll(transfer_amount_input));
-          break;
-        }
+        get_valid_monetary_value(transfer_amount);
 
         // transfer_between_users(users, sender_id, receiver_id, transfer_amount);
         break;
@@ -300,9 +278,15 @@ bool is_input_valid(const std::string &input,
   if(integer.length() > max_integer_digits) return false;
 
   if(!decimal.empty()) {
+    size_t last_zero = decimal.rfind('0');
     size_t last_non_zero = decimal.find_last_not_of('0');
-    if(last_non_zero != std::string::npos) {
-      decimal = decimal.substr(0, last_non_zero + 1);
+    if(last_zero != std::string::npos && last_non_zero != std::string::npos) {
+      if(last_non_zero > last_zero) {
+        decimal = decimal.substr(0, last_non_zero + 1);
+      } else {
+        decimal = decimal.substr(0, last_zero + 1);
+      }
+      std::cout << "decimal: " << decimal << std::endl;
     } else {
       decimal.clear();
     }
@@ -320,20 +304,20 @@ void get_user_data(std::string &name,
 
   get_valid_user_name(name);
   get_valid_user_age(age);
-  bool balance_has_cents = false;
-  get_valid_user_balance(balance_in_cents, balance_has_cents);
+  std::cout << "Insira o saldo do usuário: ";
+  get_valid_monetary_value(balance_in_cents);
 
   std::cout << "\n--- Dados do Usuário Inseridos ---\n"
             << "Nome: " << name << "\n"
             << "Idade: " << age << " anos\n"
             << "Saldo: R$ " << (balance_in_cents / 100)
             << ",";
-  if(balance_has_cents) {
-    std::cout << balance_in_cents % 100;
-  } else {
-    std::cout << "00" << "\n";
+  if((balance_in_cents % 100) < 10) {
+    std::cout << "0";
   }
+  std::cout << (balance_in_cents % 100) << "\n";
   std::cout << "-----------------------------------\n";
+  std::cout << "Balance_in_cents: " << balance_in_cents <<std::endl;
 }
 
 void get_valid_user_name(std::string &name) {
@@ -381,29 +365,30 @@ void get_valid_user_age(unsigned short &age) {
   }
 }
 
-void get_valid_user_balance(unsigned long long &balance_in_cents, bool &balance_has_cents) {
-  std::string balance;
+void get_valid_monetary_value(unsigned long long &monetary_value) {
+  std::string value;
   while (true) {
-    std::cout << "Insira o saldo do usuário: ";
-    if(!getline(std::cin, balance, INPUT_DELIMITER)) {
+    if(!getline(std::cin, value, INPUT_DELIMITER)) {
       std::cin.clear();
       std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
-      std::cout << "Erro na leitura da entrada de saldo. Por favor, tente novamente.\n";
+      std::cout << "Erro ao ler entrada de valor monetário. Por favor, tente novamente: ";
       continue;
     }
-    if(!is_input_valid(balance, 10, 2, false)) {
-      std::cout << "Saldo inválido. O saldo deve ser menor que R$10.000.000.000,00\n"
-                << "Por favor, tente novamente.\n";
+    if(!is_input_valid(value, 10, 2, false)) {
+      std::cout << "Entrada inválida. O valor deve ser menor que R$10.000.000.000,00 e "
+                << "seu formato deve ser XXXXXXXXXX.XX\n"
+                << "Por favor, tente novamente: ";
       continue;
     }
     
-    size_t dot_position = balance.rfind('.');
+    size_t dot_position = value.rfind('.');
     if(dot_position != std::string::npos) {
-      balance_has_cents = true;
-      balance.erase(dot_position, 1);
+      value.erase(dot_position, 1);
+      monetary_value = std::stoull(value);
+      break;
     }
 
-    balance_in_cents = static_cast<unsigned long long>(std::stoll(balance));
+    monetary_value = std::stoull(value) * 100;
     break;
   }
 }
