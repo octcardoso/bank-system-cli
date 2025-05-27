@@ -30,6 +30,7 @@ void register_user(user *&users,
                  const std::string &name, 
                  const unsigned short &age, 
                  const unsigned long long &balance_in_cents);
+void print_user_data(const user * const &users, const unsigned int &index);
 
 int main() {
   // Menu
@@ -132,7 +133,7 @@ int main() {
         std::cout << "\n--- Buscar Usuário por ID ---\n"
                   << "ID do usuário: ";
         user_id = get_valid_user_index(users, current_capacity);
-        // print_user(users, user_id);
+        print_user_data(users, user_id);
         break;
       }
       case 4: {
@@ -293,7 +294,6 @@ bool is_input_valid(const std::string &input,
       } else {
         decimal = decimal.substr(0, last_zero + 1);
       }
-      std::cout << "decimal: " << decimal << std::endl;
     } else {
       decimal.clear();
     }
@@ -324,7 +324,6 @@ void get_user_data(std::string &name,
   }
   std::cout << (balance_in_cents % 100) << "\n";
   std::cout << "-----------------------------------\n";
-  std::cout << "Balance_in_cents: " << balance_in_cents <<std::endl;
 }
 
 void get_valid_user_name(std::string &name) {
@@ -443,4 +442,23 @@ void register_user(user *&users,
   };
 
   user_amount += 1;
+}
+
+void print_user_data(const user * const &users, const unsigned int &index) {
+  if(users == NULL) {
+    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
+    abort();
+  }
+
+  std::cout << "\n--- Dados do Usuário " << index + 1 << " ---\n"
+            << "ID: " << index + 1 << "\n"
+            << "Nome: " << users[index].name << "\n"
+            << "Idade: " << users[index].age << " anos\n"
+            << "Saldo: R$ " << (users[index].balance_in_cents / 100)
+            << ",";
+  if((users[index].balance_in_cents % 100) < 10) {
+    std::cout << "0";
+  }
+  std::cout << (users[index].balance_in_cents % 100) << "\n";
+  std::cout << "--------------------------\n";
 }
