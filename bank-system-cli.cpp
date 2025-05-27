@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <limits>
+#include <fstream>
 
 const unsigned int INITIAL_CAPACITY = 10; 
 const unsigned short MIN_USER_AGE = 18;
@@ -36,6 +37,9 @@ void transfer_between_users(user * const &users,
                             const unsigned int &receiver_index, 
                             const unsigned long long &transfer_amount);
 void remove_user(user * const &users, const unsigned int &user_index);
+void save_users_to_file(const user * const &users, 
+                        const unsigned int &user_amount, 
+                        const unsigned int &current_capacity);
 
 int main() {
   // Menu
@@ -178,6 +182,7 @@ int main() {
       }
       case 7: {
         // Sair e salvar
+        save_users_to_file(users, user_amount, current_capacity);
         running = false;
         break;
       }
@@ -318,16 +323,6 @@ void get_user_data(std::string &name,
   std::cout << "Insira o saldo do usuário: ";
   get_valid_monetary_value(balance_in_cents);
 
-  /*std::cout << "\n--- Dados do Usuário Inseridos ---\n"
-            << "Nome: " << name << "\n"
-            << "Idade: " << age << " anos\n"
-            << "Saldo: R$ " << (balance_in_cents / 100)
-            << ",";
-  if((balance_in_cents % 100) < 10) {
-    std::cout << "0";
-  }
-  std::cout << (balance_in_cents % 100) << "\n";
-  std::cout << "-----------------------------------\n";*/
 }
 
 void get_valid_user_name(std::string &name) {
@@ -548,4 +543,30 @@ void remove_user(user * const &users, const unsigned int &user_index) {
   std::cout << "\n------ Usuário Removido com Sucesso ------\n"
             << "ID do Usuário removido: " << user_index + 1 << "\n"
             << "------------------------------------------\n";
+}
+
+void save_users_to_file(const user * const &users, 
+                        const unsigned int &user_amount, 
+                        const unsigned int &current_capacity
+) {
+  if(users == NULL) {
+    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
+    abort();
+  }
+
+  std::ofstream file("users.txt", std::ios::out);
+  file << user_amount << "\n";
+  for(unsigned int i = 0; i < current_capacity; i++) {
+    if(!users[i].name.empty()) {
+      file << users[i].name << ","
+           << users[i].age << ","
+           << (users[i].balance_in_cents / 100)
+           << ".";
+      if((users[i].balance_in_cents % 100) < 10) {
+        file << "0";
+      }
+      file << (users[i].balance_in_cents % 100) << "\n";
+    }
+  }
+  file.close();
 }
