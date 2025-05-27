@@ -10,7 +10,8 @@ const char INPUT_DELIMITER = '\n';
 
 typedef struct User {
   std::string name;
-  unsigned short age; unsigned long long balance_in_cents;
+  unsigned short age;
+  unsigned long long balance_in_cents;
 } user;
 
 unsigned int get_valid_user_index(const user* const &users, const unsigned int &current_capacity);
@@ -23,17 +24,23 @@ void get_user_data(std::string &name,
                    unsigned long long &balance_in_cents);
 void get_valid_user_name(std::string &name); void get_valid_user_age(unsigned short &age);
 void get_valid_monetary_value(unsigned long long &balance_in_cents);
+void register_user(user *&users, 
+                 unsigned int &current_capacity, 
+                 unsigned int &user_amount, 
+                 const std::string &name, 
+                 const unsigned short &age, 
+                 const unsigned long long &balance_in_cents);
 
 int main() {
   // Menu
   user *users = new user[INITIAL_CAPACITY];
   if(users == NULL) {
-    std::cout << "Problema na inicialização dos usuários. Abortando o programa...\n";
+    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
     abort();
   }
 
   unsigned int current_capacity = INITIAL_CAPACITY;
-  unsigned int user_amount = 4;
+  unsigned int user_amount = 0;
   unsigned short menu_choice = 0;
   bool running = true;
 
@@ -73,7 +80,7 @@ int main() {
 
         std::cout << "\n--- Inserir Novo Usuário ---\n";
         get_user_data(name, age, balance_in_cents);
-        // create_user(users, current_capacity, user_amount, name, age, balance_in_cents);
+        register_user(users, current_capacity, user_amount, name, age, balance_in_cents);
         break;
       }
       case 2: {
@@ -109,7 +116,7 @@ int main() {
         for(unsigned int i = 0; i < insert_amount; i++) {
           std::cout << "\n--- Dados para Usuário " << i + 1 << " de " << insert_amount << " ---\n";
           get_user_data(name, age, balance_in_cents);
-          // create_user(users, current_capacity, user_amount, name, age, balance_in_cents);
+          register_user(users, current_capacity, user_amount, name, age, balance_in_cents);
         }
         break;
       }
@@ -176,7 +183,7 @@ int main() {
 unsigned int get_valid_user_index(const user* const &users, const unsigned int &current_capacity) {
 
   if (users == NULL) { // NULL ou nullptr ?
-    std::cerr << "Erro: problema na leitura dos usuários. Encerrando o programa...\n";
+    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
     abort();
   }
 
@@ -391,4 +398,49 @@ void get_valid_monetary_value(unsigned long long &monetary_value) {
     monetary_value = std::stoull(value) * 100;
     break;
   }
+}
+
+void register_user(user *&users, 
+                 unsigned int &current_capacity, 
+                 unsigned int &user_amount, 
+                 const std::string &name, 
+                 const unsigned short &age, 
+                 const unsigned long long &balance_in_cents
+) {
+  if(users == NULL) {
+    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
+    abort();
+  }
+
+  if(current_capacity == 0) {
+    std::cerr << "Erro: capacidade de usuários é zero. Encerrando o programa...\n";
+    abort();
+  }
+
+  if(user_amount > (current_capacity - 1)) { 
+
+    user *new_vector = new user[(current_capacity * 2)];
+    if(new_vector == NULL) {
+      std::cout << "\nFalha ao ampliar o vetor de usuários. "
+                << "O usuário " << name << " com ID " << user_amount
+                << " não foi registrado.\n\n";
+      return;
+    }
+
+    for(unsigned int i = 0; i < current_capacity; i++) {
+      new_vector[i] = users[i];
+    }
+
+    current_capacity *= 2;
+    delete[] users;
+    users = new_vector;
+  }
+
+  users[user_amount] = {
+    name,
+    age,
+    balance_in_cents
+  };
+
+  user_amount += 1;
 }
