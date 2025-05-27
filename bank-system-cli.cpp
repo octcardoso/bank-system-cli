@@ -30,11 +30,12 @@ void register_user(user *&users,
                  const std::string &name, 
                  const unsigned short &age, 
                  const unsigned long long &balance_in_cents);
-void print_user_data(const user * const &users, const unsigned int &index);
+void print_user_data(const user * const &users, const unsigned int &user_index);
 void transfer_between_users(user * const &users, 
                             const unsigned int &sender_index, 
                             const unsigned int &receiver_index, 
                             const unsigned long long &transfer_amount);
+// void remove_user(user * const &users, const unsigned int &user_index);
 
 int main() {
   // Menu
@@ -136,7 +137,9 @@ int main() {
         unsigned int user_index = 0;
         std::cout << "\n--- Buscar Usuário por ID ---\n"
                   << "ID do usuário: ";
+
         user_index = get_valid_user_index(users, current_capacity);
+
         print_user_data(users, user_index);
         break;
       }
@@ -219,12 +222,6 @@ unsigned int get_valid_user_index(const user* const &users, const unsigned int &
     }
 
     unsigned int user_index = user_id - 1;
-
-    if (users[user_index].name.empty()) {
-      std::cout << "O usuário com ID " << user_id << " não existe.\n"
-                << "Por favor, insira um ID válido: ";
-      continue;
-    }
 
     return user_index;
   }
@@ -448,22 +445,27 @@ void register_user(user *&users,
   user_amount += 1;
 }
 
-void print_user_data(const user * const &users, const unsigned int &index) {
+void print_user_data(const user * const &users, const unsigned int &user_index) {
   if(users == NULL) {
     std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
     abort();
   }
 
-  std::cout << "\n--- Dados do Usuário " << index + 1 << " ---\n"
-            << "ID: " << index + 1 << "\n"
-            << "Nome: " << users[index].name << "\n"
-            << "Idade: " << users[index].age << " anos\n"
-            << "Saldo: R$ " << (users[index].balance_in_cents / 100)
+  if(users[user_index].name.empty()) {
+    std::cout << "O usuário com ID " << user_index + 1 << " não existe ou foi deletado.\n";
+    return;
+  }
+
+  std::cout << "\n--- Dados do Usuário " << user_index + 1 << " ---\n"
+            << "ID: " << user_index + 1 << "\n"
+            << "Nome: " << users[user_index].name << "\n"
+            << "Idade: " << users[user_index].age << " anos\n"
+            << "Saldo: R$ " << (users[user_index].balance_in_cents / 100)
             << ",";
-  if((users[index].balance_in_cents % 100) < 10) {
+  if((users[user_index].balance_in_cents % 100) < 10) {
     std::cout << "0";
   }
-  std::cout << (users[index].balance_in_cents % 100) << "\n";
+  std::cout << (users[user_index].balance_in_cents % 100) << "\n";
   std::cout << "--------------------------\n";
 }
 
@@ -480,6 +482,24 @@ void transfer_between_users(user * const &users,
   if(sender_index == receiver_index) {
     std::cout << "Você não pode fazer uma transferencia para si mesmo.\n"
               << "Transferencia cancelada.\n";
+    return;
+  }
+
+  if(users[sender_index].name.empty()) {
+    std::cout << "O usuário com ID " << sender_index + 1 << " não existe ou foi deletado.\n"
+              << "Não é possível realizar a transferencia.\n";
+    return;
+  }
+
+  if(users[receiver_index].name.empty()) {
+    std::cout << "O usuário com ID " << receiver_index + 1 << " não existe ou foi deletado.\n"
+              << "Não é possível realizar a transferencia.\n";
+    return;
+  }
+
+  if(users[sender_index].balance_in_cents < transfer_amount) {
+    std::cout << "O usuário " << users[sender_index].name << " com ID "
+              << sender_index + 1 << " não possuí saldo suficiente para realizar a transferencia.\n";
     return;
   }
 
