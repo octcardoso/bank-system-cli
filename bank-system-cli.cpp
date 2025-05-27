@@ -35,7 +35,7 @@ void transfer_between_users(user * const &users,
                             const unsigned int &sender_index, 
                             const unsigned int &receiver_index, 
                             const unsigned long long &transfer_amount);
-// void remove_user(user * const &users, const unsigned int &user_index);
+void remove_user(user * const &users, const unsigned int &user_index);
 
 int main() {
   // Menu
@@ -166,7 +166,7 @@ int main() {
         std::cout << "\n------ Remoção de Usuário por ID ------\n"
                   << "Insira o ID do usuário a ser removido: ";
         target_user_index = get_valid_user_index(users, current_capacity);
-        // remove_user(users, target_user_index);
+        remove_user(users, target_user_index);
         break;
       }
       case 6: {
@@ -505,4 +505,18 @@ void transfer_between_users(user * const &users,
 
   users[sender_index].balance_in_cents -= transfer_amount;
   users[receiver_index].balance_in_cents += transfer_amount;
+}
+
+void remove_user(user * const &users, const unsigned int &user_index) {
+  if(users == NULL) {
+    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
+    abort();
+  }
+
+  if(users[user_index].name.empty()) {
+    std::cout << "O usuário com ID " << user_index + 1 << " já está vazio.\n";
+    return;
+  }
+
+  users[user_index] = {};
 }
