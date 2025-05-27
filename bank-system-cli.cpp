@@ -58,7 +58,8 @@ int main() {
               << "4. Transferência entre usuários\n"
               << "5. Remover usuários por ID\n"
               << "6. Carregar arquivo para a memória\n"
-              << "7. Sair e salvar\n\n"
+              << "7. Sair e salvar\n"
+              << "------------------------------------\n\n"
               << "Opção desejada: ";
 
     while(true) {
@@ -84,8 +85,9 @@ int main() {
         unsigned short age = 0;
         unsigned long long balance_in_cents = 0;
 
-        std::cout << "\n--- Inserir Novo Usuário ---\n";
+        std::cout << "\n------ Inserir Novo Usuário ------\n";
         get_user_data(name, age, balance_in_cents);
+        std::cout << "----------------------------------\n";
         register_user(users, current_capacity, user_amount, name, age, balance_in_cents);
         break;
       }
@@ -120,8 +122,9 @@ int main() {
         }
 
         for(unsigned int i = 0; i < insert_amount; i++) {
-          std::cout << "\n--- Dados para Usuário " << i + 1 << " de " << insert_amount << " ---\n";
+          std::cout << "\n------ Dados para Usuário " << i + 1 << " de " << insert_amount << " ------\n";
           get_user_data(name, age, balance_in_cents);
+          std::cout << "----------------------------------------\n";
           register_user(users, current_capacity, user_amount, name, age, balance_in_cents);
         }
         break;
@@ -190,7 +193,7 @@ int main() {
 
 unsigned int get_valid_user_index(const user* const &users, const unsigned int &current_capacity) {
 
-  if (users == NULL) { // NULL ou nullptr ?
+  if (users == NULL) {
     std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
     abort();
   }
@@ -315,7 +318,7 @@ void get_user_data(std::string &name,
   std::cout << "Insira o saldo do usuário: ";
   get_valid_monetary_value(balance_in_cents);
 
-  std::cout << "\n--- Dados do Usuário Inseridos ---\n"
+  /*std::cout << "\n--- Dados do Usuário Inseridos ---\n"
             << "Nome: " << name << "\n"
             << "Idade: " << age << " anos\n"
             << "Saldo: R$ " << (balance_in_cents / 100)
@@ -324,7 +327,7 @@ void get_user_data(std::string &name,
     std::cout << "0";
   }
   std::cout << (balance_in_cents % 100) << "\n";
-  std::cout << "-----------------------------------\n";
+  std::cout << "-----------------------------------\n";*/
 }
 
 void get_valid_user_name(std::string &name) {
@@ -357,15 +360,13 @@ void get_valid_user_age(unsigned short &age) {
     }
     if(!is_input_valid(age_input, 3, 0, false)) {
       std::cout << "Idade inválida. A idade deve estar entre " << MIN_USER_AGE
-                << " e " << MAX_USER_AGE << ".\n"
-                << "Por favor, tente novamente.\n";
+                << " e " << MAX_USER_AGE << ".\n";
       continue;
     }
     age = static_cast<unsigned short>(std::stoi(age_input));
     if(age > MAX_USER_AGE || age < MIN_USER_AGE) {
       std::cout << "Idade inválida. A idade deve estar entre " << MIN_USER_AGE
-                << " e " << MAX_USER_AGE << ".\n"
-                << "Por favor, tente novamente.\n";
+                << " e " << MAX_USER_AGE << ".\n";
       continue;
     }
     break;
@@ -421,9 +422,11 @@ void register_user(user *&users,
 
     user *new_vector = new user[(current_capacity * 2)];
     if(new_vector == NULL) {
-      std::cout << "\nFalha ao ampliar o vetor de usuários. "
+      std::cerr << "\n-------------------------- ERRO --------------------------\n"
+                << "Falha ao alocar memória para expandir o vetor de usuários.\n"
                 << "O usuário " << name << " com ID " << user_amount
-                << " não foi registrado.\n\n";
+                << " não pôde ser registrado.\n"
+                << "----------------------------------------------------------\n";
       return;
     }
 
@@ -442,6 +445,18 @@ void register_user(user *&users,
     balance_in_cents
   };
 
+  std::cout << "\n--------- Usuário Registrado com Sucesso ---------\n"
+            << "ID do Usuário: " << user_amount + 1 << "\n"
+            << "Nome: " << users[user_amount].name << "\n"
+            << "Idade: " << users[user_amount].age << " anos\n"
+            << "Saldo: R$ " << (users[user_amount].balance_in_cents / 100)
+            << ",";
+  if((users[user_amount].balance_in_cents % 100) < 10) {
+    std::cout << "0";
+  }
+  std::cout << (users[user_amount].balance_in_cents % 100) << "\n";
+  std::cout << "--------------------------------------------------\n";
+
   user_amount += 1;
 }
 
@@ -456,8 +471,7 @@ void print_user_data(const user * const &users, const unsigned int &user_index) 
     return;
   }
 
-  std::cout << "\n--- Dados do Usuário " << user_index + 1 << " ---\n"
-            << "ID: " << user_index + 1 << "\n"
+  std::cout << "\n------ Dados do Usuário (ID: " << user_index + 1 << ") ------\n"
             << "Nome: " << users[user_index].name << "\n"
             << "Idade: " << users[user_index].age << " anos\n"
             << "Saldo: R$ " << (users[user_index].balance_in_cents / 100)
@@ -466,7 +480,7 @@ void print_user_data(const user * const &users, const unsigned int &user_index) 
     std::cout << "0";
   }
   std::cout << (users[user_index].balance_in_cents % 100) << "\n";
-  std::cout << "--------------------------\n";
+  std::cout << "---------------------------------------\n";
 }
 
 void transfer_between_users(user * const &users, 
@@ -505,6 +519,17 @@ void transfer_between_users(user * const &users,
 
   users[sender_index].balance_in_cents -= transfer_amount;
   users[receiver_index].balance_in_cents += transfer_amount;
+
+  std::cout << "\n-------------- Transferência Realizada com Sucesso --------------\n"
+            << "Valor: R$ " << (transfer_amount / 100)
+            << ",";
+  if((transfer_amount % 100) < 10) {
+    std::cout << "0";
+  }
+  std::cout << (transfer_amount % 100) << "\n"
+            << "De: " << users[sender_index].name << ", ID: " << sender_index + 1 << "\n"
+            << "Para: " << users[receiver_index].name << ", ID: " << receiver_index + 1 << "\n"
+            << "-----------------------------------------------------------------\n";
 }
 
 void remove_user(user * const &users, const unsigned int &user_index) {
@@ -519,4 +544,8 @@ void remove_user(user * const &users, const unsigned int &user_index) {
   }
 
   users[user_index] = {};
+
+  std::cout << "\n------ Usuário Removido com Sucesso ------\n"
+            << "ID do Usuário removido: " << user_index + 1 << "\n"
+            << "------------------------------------------\n";
 }
