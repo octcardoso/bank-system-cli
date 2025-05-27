@@ -31,6 +31,10 @@ void register_user(user *&users,
                  const unsigned short &age, 
                  const unsigned long long &balance_in_cents);
 void print_user_data(const user * const &users, const unsigned int &index);
+void transfer_between_users(user * const &users, 
+                            const unsigned int &sender_index, 
+                            const unsigned int &receiver_index, 
+                            const unsigned long long &transfer_amount);
 
 int main() {
   // Menu
@@ -129,37 +133,37 @@ int main() {
           break;
         }
 
-        unsigned int user_id = 0;
+        unsigned int user_index = 0;
         std::cout << "\n--- Buscar Usuário por ID ---\n"
                   << "ID do usuário: ";
-        user_id = get_valid_user_index(users, current_capacity);
-        print_user_data(users, user_id);
+        user_index = get_valid_user_index(users, current_capacity);
+        print_user_data(users, user_index);
         break;
       }
       case 4: {
         // Transferência entre usuários
-        unsigned int sender_id = 0, receiver_id = 0;
+        unsigned int sender_index = 0, receiver_index = 0;
         unsigned long long transfer_amount = 0;
 
         std::cout << "\n--- Transferência Entre Usuários ---\n"
                   << "Insira o ID do remetente: ";
-        sender_id = get_valid_user_index(users, current_capacity);
+        sender_index = get_valid_user_index(users, current_capacity);
         std::cout << "Insira o ID do destinatário: ";
-        receiver_id = get_valid_user_index(users, current_capacity);
+        receiver_index = get_valid_user_index(users, current_capacity);
         std::cout << "Insira a quantidade a ser transferida: ";
 
         get_valid_monetary_value(transfer_amount);
 
-        // transfer_between_users(users, sender_id, receiver_id, transfer_amount);
+        transfer_between_users(users, sender_index, receiver_index, transfer_amount);
         break;
       }
       case 5: {
         // Remover usuário por ID
-        unsigned int target_user_id;
+        unsigned int target_user_index;
         std::cout << "\n------ Remoção de Usuário por ID ------\n"
                   << "Insira o ID do usuário a ser removido: ";
-        target_user_id = get_valid_user_index(users, current_capacity);
-        // remove_user(users, target_user_id);
+        target_user_index = get_valid_user_index(users, current_capacity);
+        // remove_user(users, target_user_index);
         break;
       }
       case 6: {
@@ -461,4 +465,24 @@ void print_user_data(const user * const &users, const unsigned int &index) {
   }
   std::cout << (users[index].balance_in_cents % 100) << "\n";
   std::cout << "--------------------------\n";
+}
+
+void transfer_between_users(user * const &users, 
+                            const unsigned int &sender_index, 
+                            const unsigned int &receiver_index, 
+                            const unsigned long long &transfer_amount
+) {
+  if(users == NULL) {
+    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
+    abort();
+  }
+  
+  if(sender_index == receiver_index) {
+    std::cout << "Você não pode fazer uma transferencia para si mesmo.\n"
+              << "Transferencia cancelada.\n";
+    return;
+  }
+
+  users[sender_index].balance_in_cents -= transfer_amount;
+  users[receiver_index].balance_in_cents += transfer_amount;
 }
