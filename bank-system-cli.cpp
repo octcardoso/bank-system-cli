@@ -2,11 +2,12 @@
 #include <string>
 #include <limits>
 #include <fstream>
+#include <sstream>
 
 const unsigned int INITIAL_CAPACITY = 10; 
 const unsigned short MIN_USER_AGE = 18;
 const unsigned short MAX_USER_AGE = 130;
-const unsigned short MAX_NAME_LENGHT = 100;
+const unsigned short MAX_NAME_LENGTH = 100;
 const char INPUT_DELIMITER = '\n';
 
 typedef struct User {
@@ -23,8 +24,9 @@ bool is_input_valid(const std::string &input,
 void get_user_data(std::string &name, 
                    unsigned short &age,
                    unsigned long long &balance_in_cents);
-void get_valid_user_name(std::string &name); void get_valid_user_age(unsigned short &age);
-void get_valid_monetary_value(unsigned long long &balance_in_cents);
+bool is_username_valid(std::string &name); 
+bool is_user_age_valid(std::string &temp_input, unsigned short &age);
+bool is_monetary_value_valid(std::string &temp_input, unsigned long long &monetary_value);
 void register_user(user *&users, 
                  unsigned int &current_capacity, 
                  unsigned int &user_amount, 
@@ -40,9 +42,13 @@ void remove_user(user * const &users, const unsigned int &user_index);
 void save_users_to_file(const user * const &users, 
                         const unsigned int &user_amount, 
                         const unsigned int &current_capacity);
+void load_users_from_file(user *&users, 
+                     unsigned int &user_amount, 
+                     unsigned int &current_capacity);
 
 int main() {
   // Menu
+
   user *users = new user[INITIAL_CAPACITY];
   if(users == NULL) {
     std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
@@ -68,7 +74,7 @@ int main() {
 
     while(true) {
       std::string menu_choice_input;
-      if(!getline(std::cin, menu_choice_input, INPUT_DELIMITER)) {
+      if(!std::getline(std::cin, menu_choice_input, INPUT_DELIMITER)) {
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INITIAL_CAPACITY);
         std::cout << "Erro ao obter um valor do menu. Tente novamente: ";
@@ -107,7 +113,7 @@ int main() {
 
         while(true) {
           std::string insert_amount_input;
-          if(!getline(std::cin, insert_amount_input, INPUT_DELIMITER)) {
+          if(!std::getline(std::cin, insert_amount_input, INPUT_DELIMITER)) {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INITIAL_CAPACITY);
             std::cout << "Erro ao obter a quantidade. Tente novamente: ";
@@ -160,9 +166,12 @@ int main() {
         sender_index = get_valid_user_index(users, current_capacity);
         std::cout << "Insira o ID do destinatário: ";
         receiver_index = get_valid_user_index(users, current_capacity);
-        std::cout << "Insira a quantidade a ser transferida: ";
 
-        get_valid_monetary_value(transfer_amount);
+        std::string temp_input;
+        do {
+          std::cout << "Insira a quantidade a ser transferida: ";
+          std::getline(std::cin, temp_input, INPUT_DELIMITER);
+        } while(!is_monetary_value_valid(temp_input, transfer_amount));
 
         transfer_between_users(users, sender_index, receiver_index, transfer_amount);
         break;
@@ -178,6 +187,7 @@ int main() {
       }
       case 6: {
         // Carregar arquivo para a memória
+        load_users_from_file(users, user_amount, current_capacity);
         break;
       }
       case 7: {
@@ -318,82 +328,96 @@ void get_user_data(std::string &name,
                    unsigned long long &balance_in_cents
 ) {
 
-  get_valid_user_name(name);
-  get_valid_user_age(age);
-  std::cout << "Insira o saldo do usuário: ";
-  get_valid_monetary_value(balance_in_cents);
-
-}
-
-void get_valid_user_name(std::string &name) {
-  while (true) {
+  do {
     std::cout << "Insira o nome do usuário: ";
-    if(!getline(std::cin, name, INPUT_DELIMITER)) {
-      std::cin.clear();
-      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
-      std::cout << "Erro na leitura da entrada para o nome. Por favor, tente novamente.\n";
-      continue;
-    }
-    if (name.length() > MAX_NAME_LENGHT) {
-      std::cout << "Nome inváldio. O nome excede o limite de " << MAX_NAME_LENGHT << " caracteres.\n"
-                << "Por favor, tente novamente.\n";
-      continue;
-    }
-    break;
-  }
-}
+    std::getline(std::cin, name, INPUT_DELIMITER);
+  } while(!is_username_valid(name));
 
-void get_valid_user_age(unsigned short &age) {
-  std::string age_input;
-  while(true) {
+  std::string temp_input;
+  do {
     std::cout << "Insira a idade do usuário: ";
-    if(!getline(std::cin, age_input, INPUT_DELIMITER)) {
-      std::cin.clear();
-      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
-      std::cout << "Erro na leitura da entrada para idade. Por favor, tente novamente.\n";
-      continue;
-    }
-    if(!is_input_valid(age_input, 3, 0, false)) {
-      std::cout << "Idade inválida. A idade deve estar entre " << MIN_USER_AGE
-                << " e " << MAX_USER_AGE << ".\n";
-      continue;
-    }
-    age = static_cast<unsigned short>(std::stoi(age_input));
-    if(age > MAX_USER_AGE || age < MIN_USER_AGE) {
-      std::cout << "Idade inválida. A idade deve estar entre " << MIN_USER_AGE
-                << " e " << MAX_USER_AGE << ".\n";
-      continue;
-    }
-    break;
-  }
+    std::getline(std::cin, temp_input, INPUT_DELIMITER);
+  } while(!is_user_age_valid(temp_input, age));
+
+  do {
+    std::cout << "Insira o saldo do usuário: ";
+    std::getline(std::cin, temp_input, INPUT_DELIMITER);
+  } while(!is_monetary_value_valid(temp_input, balance_in_cents));
+
 }
 
-void get_valid_monetary_value(unsigned long long &monetary_value) {
-  std::string value;
-  while (true) {
-    if(!getline(std::cin, value, INPUT_DELIMITER)) {
-      std::cin.clear();
-      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
-      std::cout << "Erro ao ler entrada de valor monetário. Por favor, tente novamente: ";
-      continue;
-    }
-    if(!is_input_valid(value, 10, 2, false)) {
-      std::cout << "Entrada inválida. O valor deve ser menor que R$10.000.000.000,00 e "
-                << "seu formato deve ser XXXXXXXXXX.XX\n"
-                << "Por favor, tente novamente: ";
-      continue;
-    }
-    
-    size_t dot_position = value.rfind('.');
-    if(dot_position != std::string::npos) {
-      value.erase(dot_position, 1);
-      monetary_value = std::stoull(value);
-      break;
-    }
-
-    monetary_value = std::stoull(value) * 100;
-    break;
+bool is_username_valid(std::string &name) {
+  if(std::cin.fail()) {
+    std::cin.clear();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
+    std::cout << "Erro na leitura da entrada para o nome. Por favor, tente novamente.\n";
+    return false;
   }
+  if(name.empty()) {
+    std::cout << "Nome inválido. O nome do usuário não pode estar vazio.\n"
+              << "Por favor, tente novamente.\n";
+    return false;
+  }
+  if(name.find(",") != std::string::npos) {
+    std::cout << "Nome inválido. O nome contém caracteres inválidos.\n"
+              << "Por favor, tente novamente.\n";
+    return false;
+  }
+  if(name.length() > MAX_NAME_LENGTH) {
+    std::cout << "Nome inválido. O nome excede o limite de " << MAX_NAME_LENGTH << " caracteres.\n"
+              << "Por favor, tente novamente.\n";
+    return false;
+  }
+  return true;
+}
+
+bool is_user_age_valid(std::string &temp_input, unsigned short &age) {
+  if(std::cin.fail()) {
+    std::cin.clear();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
+    std::cout << "Erro na leitura da entrada para idade. Por favor, tente novamente.\n";
+    return false;
+  }
+  if(!is_input_valid(temp_input, 3, 0, false)) {
+    std::cout << "Idade inválida. A idade deve estar entre " << MIN_USER_AGE
+              << " e " << MAX_USER_AGE << ".\n";
+    return false;
+  }
+  age = static_cast<unsigned short>(std::stoi(temp_input));
+  if(age > MAX_USER_AGE || age < MIN_USER_AGE) {
+    std::cout << "Idade inválida. A idade deve estar entre " << MIN_USER_AGE
+              << " e " << MAX_USER_AGE << ".\n";
+    return false;
+  }
+  return true;
+}
+
+bool is_monetary_value_valid(std::string &temp_input, 
+                             unsigned long long &monetary_value
+) {
+  if(std::cin.fail()) {
+    std::cin.clear();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
+    std::cout << "Erro ao ler entrada de valor monetário. Por favor, tente novamente: ";
+    return false;
+  }
+
+  if(!is_input_valid(temp_input, 10, 2, false)) {
+    std::cout << "Entrada inválida. O valor deve ser menor que R$10.000.000.000,00 e "
+              << "seu formato deve ser XXXXXXXXXX.XX\n"
+              << "Por favor, tente novamente: ";
+    return false;
+  }
+    
+  size_t dot_position = temp_input.rfind('.');
+  if(dot_position != std::string::npos) {
+    temp_input.erase(dot_position, 1);
+    monetary_value = std::stoull(temp_input);
+    return true;
+  }
+
+  monetary_value = std::stoull(temp_input) * 100;
+  return true;
 }
 
 void register_user(user *&users, 
