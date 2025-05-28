@@ -43,8 +43,8 @@ void save_users_to_file(const user * const &users,
                         const unsigned int &user_amount, 
                         const unsigned int &current_capacity);
 void load_users_from_file(user *&users, 
-                     unsigned int &user_amount, 
-                     unsigned int &current_capacity);
+                     unsigned int &current_capacity,
+                     unsigned int &user_amount);
 
 int main() {
   // Menu
@@ -72,11 +72,11 @@ int main() {
               << "------------------------------------\n\n"
               << "Opção desejada: ";
 
+    std::string menu_choice_input;
     while(true) {
-      std::string menu_choice_input;
       if(!std::getline(std::cin, menu_choice_input, INPUT_DELIMITER)) {
         std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INITIAL_CAPACITY);
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
         std::cout << "Erro ao obter um valor do menu. Tente novamente: ";
         continue;
       }
@@ -111,11 +111,11 @@ int main() {
         std::cout << "\n------------- Inserir Vários Usuários -------------\n"
                   << "Quantidade desejada de usuários a serem inseridos: ";
 
+        std::string insert_amount_input;
         while(true) {
-          std::string insert_amount_input;
           if(!std::getline(std::cin, insert_amount_input, INPUT_DELIMITER)) {
             std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INITIAL_CAPACITY);
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
             std::cout << "Erro ao obter a quantidade. Tente novamente: ";
             continue;
           }
@@ -187,7 +187,7 @@ int main() {
       }
       case 6: {
         // Carregar arquivo para a memória
-        load_users_from_file(users, user_amount, current_capacity);
+        load_users_from_file(users, current_capacity, user_amount);
         break;
       }
       case 7: {
@@ -466,7 +466,7 @@ void register_user(user *&users,
 
   std::cout << "\n--------- Usuário Registrado com Sucesso ---------\n"
             << "ID do Usuário: " << user_amount + 1 << "\n"
-            << "Nome: " << users[user_amount].name << "\n"
+            << "Nome:  " << users[user_amount].name << "\n"
             << "Idade: " << users[user_amount].age << " anos\n"
             << "Saldo: R$ " << (users[user_amount].balance_in_cents / 100)
             << ",";
@@ -579,6 +579,13 @@ void save_users_to_file(const user * const &users,
   }
 
   std::ofstream file("users.txt", std::ios::out);
+
+  if(file.fail()) {
+    std::cout << "Erro ao escrever \"users.txt\".\n";
+    file.close();
+    return;
+  }
+
   file << user_amount << "\n";
   for(unsigned int i = 0; i < current_capacity; i++) {
     if(!users[i].name.empty()) {
@@ -591,6 +598,87 @@ void save_users_to_file(const user * const &users,
       }
       file << (users[i].balance_in_cents % 100) << "\n";
     }
+  }
+  file.close();
+}
+
+void load_users_from_file(user *&users, 
+                     unsigned int &current_capacity,
+                     unsigned int &user_amount
+) {
+  if(users == NULL) {
+    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
+    abort();
+  }
+  
+  std::ifstream file;
+  file.open("users.txt", std::ios::in);
+
+  if(file.fail()) {
+    std::cout << "Arquivo users.txt não encontrado.\n";
+    file.close();
+    return;
+  }
+
+  std::string temp;
+
+  // unsigned short total_users;
+
+  if(!std::getline(file, temp)) {
+    std::cerr << "Erro: não foi possível extrair a quantidade de usuários.\n";
+    file.close();
+    return;
+  }
+
+  if(!is_input_valid(temp, 6, 0, false)) {
+    std::cerr << "Erro: não foi possível extrair a quantidade de usuários.\n";
+    file.close();
+    return;
+  }
+
+  // total_users = static_cast<unsigned short>(std::stoi(temp));
+
+  std::string line;
+
+  std::string name;
+  unsigned short age;
+  unsigned long long balance_in_cents;
+
+  while(file) {
+    std::getline(file, line);
+
+    if(line.empty()) continue;
+
+    std::istringstream ss(line);
+
+    if(!std::getline(ss, name, ',')) {
+      std::cout << "Erro: não foi possível extrair o nome." << std::endl;
+      return;
+    }
+    
+    if(!is_username_valid(name)) return;
+    
+    if(!std::getline(ss, temp, ',')) {
+      std::cout << "Erro: não foi possível extrair a idade." << std::endl;
+      return;
+    }
+
+    if(!is_user_age_valid(temp, age)) return;
+
+    if(!std::getline(ss, temp, ',')) {
+      std::cout << "Erro: não foi possível extrair o saldo." << std::endl;
+      return;
+    }
+
+    if(!is_monetary_value_valid(temp, balance_in_cents)) return;
+
+    register_user(users, current_capacity, user_amount, name, age, balance_in_cents);
+  }
+
+  if(!file.eof()) {
+    std::cerr << "Erro de leitura no arquivo.\n";
+    file.close();
+    return;
   }
   file.close();
 }
