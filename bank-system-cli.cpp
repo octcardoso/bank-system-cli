@@ -29,7 +29,7 @@ bool is_user_age_valid(std::string &temp_input, unsigned short &age);
 bool is_monetary_value_valid(std::string &temp_input, unsigned long long &monetary_value);
 void register_user(user *&users, 
                  unsigned int &current_capacity, 
-                 unsigned int &user_amount, 
+                 unsigned int &max_user_index, 
                  const std::string &name, 
                  const unsigned short &age, 
                  const unsigned long long &balance_in_cents);
@@ -39,14 +39,14 @@ void transfer_between_users(user * const &users,
                             const unsigned int &receiver_index, 
                             const unsigned long long &transfer_amount);
 void remove_user(user * const &users, 
-                 unsigned int &user_amount,
+                 unsigned int &max_user_index,
                  const unsigned int &user_index);
 void save_users_to_file(const user * const &users, 
-                        const unsigned int &user_amount, 
+                        const unsigned int &max_user_index, 
                         const unsigned int &current_capacity);
 void load_users_from_file(user *&users, 
                      unsigned int &current_capacity,
-                     unsigned int &user_amount);
+                     unsigned int &max_user_index);
 
 int main() {
   // Menu
@@ -57,8 +57,16 @@ int main() {
     abort();
   }
 
+  for(unsigned int i = 0; i < INITIAL_CAPACITY; i++) {
+    users[i] = {
+      "",
+      0,
+      0
+    };
+  }
+
   unsigned int current_capacity = INITIAL_CAPACITY;
-  unsigned int user_amount = 0;
+  unsigned int max_user_index = 0;
   unsigned short menu_choice = 0;
   bool running = true;
 
@@ -100,7 +108,7 @@ int main() {
         std::cout << "\n------ Inserir Novo Usuário ------\n";
         get_user_data(name, age, balance_in_cents);
         std::cout << "----------------------------------\n";
-        register_user(users, current_capacity, user_amount, name, age, balance_in_cents);
+        register_user(users, current_capacity, max_user_index, name, age, balance_in_cents);
         break;
       }
       case 2: {
@@ -137,13 +145,13 @@ int main() {
           std::cout << "\n------ Dados para Usuário " << i + 1 << " de " << insert_amount << " ------\n";
           get_user_data(name, age, balance_in_cents);
           std::cout << "----------------------------------------\n";
-          register_user(users, current_capacity, user_amount, name, age, balance_in_cents);
+          register_user(users, current_capacity, max_user_index, name, age, balance_in_cents);
         }
         break;
       }
       case 3: {
         // Bucar usuário por ID
-        if(user_amount == 0) {
+        if(max_user_index == 0) {
           std::cout << "\n--- Buscar Usuário por ID ---\n"
                     << "Não há usuários registrados.\n";
           break;
@@ -184,17 +192,17 @@ int main() {
         std::cout << "\n------ Remoção de Usuário por ID ------\n"
                   << "Insira o ID do usuário a ser removido: ";
         target_user_index = get_valid_user_index(users, current_capacity);
-        remove_user(users, user_amount, target_user_index);
+        remove_user(users, max_user_index, target_user_index);
         break;
       }
       case 6: {
         // Carregar arquivo para a memória
-        load_users_from_file(users, current_capacity, user_amount);
+        load_users_from_file(users, current_capacity, max_user_index);
         break;
       }
       case 7: {
         // Sair e salvar
-        save_users_to_file(users, user_amount, current_capacity);
+        save_users_to_file(users, max_user_index, current_capacity);
         running = false;
         break;
       }
@@ -424,7 +432,7 @@ bool is_monetary_value_valid(std::string &temp_input,
 
 void register_user(user *&users, 
                  unsigned int &current_capacity, 
-                 unsigned int &user_amount, 
+                 unsigned int &max_user_index, 
                  const std::string &name, 
                  const unsigned short &age, 
                  const unsigned long long &balance_in_cents
@@ -439,20 +447,28 @@ void register_user(user *&users,
     abort();
   }
 
-  if(user_amount > (current_capacity - 1)) { 
+  if(max_user_index >= current_capacity) { 
 
     user *new_vector = new user[(current_capacity * 2)];
     if(new_vector == NULL) {
       std::cerr << "\n-------------------------- ERRO --------------------------\n"
                 << "Falha ao alocar memória para expandir o vetor de usuários.\n"
-                << "O usuário " << name << " com ID " << user_amount
+                << "O usuário " << name << " com ID " << max_user_index
                 << " não pôde ser registrado.\n"
                 << "----------------------------------------------------------\n";
       return;
     }
 
     for(unsigned int i = 0; i < current_capacity; i++) {
-      new_vector[i] = users[i];
+      if(!users[i].name.empty()) {
+        new_vector[i] = users[i];
+      } else {
+        new_vector[i] = {
+          "",
+          0,
+          0
+        };
+      }
     }
 
     current_capacity *= 2;
@@ -460,25 +476,25 @@ void register_user(user *&users,
     users = new_vector;
   }
 
-  users[user_amount] = {
+  users[max_user_index] = {
     name,
     age,
     balance_in_cents
   };
 
   std::cout << "\n--------- Usuário Registrado com Sucesso ---------\n"
-            << "ID do Usuário: " << user_amount + 1 << "\n"
-            << "Nome:  " << users[user_amount].name << "\n"
-            << "Idade: " << users[user_amount].age << " anos\n"
-            << "Saldo: R$ " << (users[user_amount].balance_in_cents / 100)
+            << "ID do Usuário: " << max_user_index + 1 << "\n"
+            << "Nome:  " << users[max_user_index].name << "\n"
+            << "Idade: " << users[max_user_index].age << " anos\n"
+            << "Saldo: R$ " << (users[max_user_index].balance_in_cents / 100)
             << ",";
-  if((users[user_amount].balance_in_cents % 100) < 10) {
+  if((users[max_user_index].balance_in_cents % 100) < 10) {
     std::cout << "0";
   }
-  std::cout << (users[user_amount].balance_in_cents % 100) << "\n";
+  std::cout << (users[max_user_index].balance_in_cents % 100) << "\n";
   std::cout << "--------------------------------------------------\n";
 
-  user_amount += 1;
+  max_user_index += 1;
 }
 
 void print_user_data(const user * const &users, const unsigned int &user_index) {
@@ -554,7 +570,7 @@ void transfer_between_users(user * const &users,
 }
 
 void remove_user(user * const &users, 
-                 unsigned int &user_amount,
+                 unsigned int &max_user_index,
                  const unsigned int &user_index
 ) {
   if(users == NULL) {
@@ -567,8 +583,11 @@ void remove_user(user * const &users,
     return;
   }
 
-  users[user_index] = {};
-  user_amount--;
+  users[user_index] = {
+    "",
+    0,
+    0
+  };
 
   std::cout << "\n------ Usuário Removido com Sucesso ------\n"
             << "ID do Usuário removido: " << user_index + 1 << "\n"
@@ -576,7 +595,7 @@ void remove_user(user * const &users,
 }
 
 void save_users_to_file(const user * const &users, 
-                        const unsigned int &user_amount, 
+                        const unsigned int &max_user_index, 
                         const unsigned int &current_capacity
 ) {
   if(users == NULL) {
@@ -592,33 +611,38 @@ void save_users_to_file(const user * const &users,
     return;
   }
 
-  file << user_amount << "\n";
+  unsigned int user_amount = 0;
+  std::string users_data;
+  std::ostringstream oss_users_data(users_data);
+
   for(unsigned int i = 0; i < current_capacity; i++) {
     if(!users[i].name.empty()) {
-      file << users[i].name << ","
+      user_amount++;
+      oss_users_data << users[i].name << ","
            << users[i].age << ","
            << (users[i].balance_in_cents / 100)
            << ".";
       if((users[i].balance_in_cents % 100) < 10) {
-        file << "0";
+        oss_users_data << "0";
       }
-      file << (users[i].balance_in_cents % 100) << "\n";
+      oss_users_data << (users[i].balance_in_cents % 100) << "\n";
     }
   }
+  file << user_amount << '\n';
+  file << oss_users_data.str();
   file.close();
 }
 
 void load_users_from_file(user *&users, 
                      unsigned int &current_capacity,
-                     unsigned int &user_amount
+                     unsigned int &max_user_index
 ) {
   if(users == NULL) {
     std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
     abort();
   }
   
-  std::ifstream file;
-  file.open("users.txt", std::ios::in);
+  std::ifstream file("users.txt", std::ios::in);
 
   if(file.fail()) {
     std::cout << "Arquivo users.txt não encontrado.\n";
@@ -678,7 +702,7 @@ void load_users_from_file(user *&users,
 
     if(!is_monetary_value_valid(temp, balance_in_cents)) return;
 
-    register_user(users, current_capacity, user_amount, name, age, balance_in_cents);
+    register_user(users, current_capacity, max_user_index, name, age, balance_in_cents);
   }
 
   if(!file.eof()) {
