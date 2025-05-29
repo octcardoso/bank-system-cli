@@ -38,7 +38,9 @@ void transfer_between_users(user * const &users,
                             const unsigned int &sender_index, 
                             const unsigned int &receiver_index, 
                             const unsigned long long &transfer_amount);
-void remove_user(user * const &users, const unsigned int &user_index);
+void remove_user(user * const &users, 
+                 unsigned int &user_amount,
+                 const unsigned int &user_index);
 void save_users_to_file(const user * const &users, 
                         const unsigned int &user_amount, 
                         const unsigned int &current_capacity);
@@ -182,7 +184,7 @@ int main() {
         std::cout << "\n------ Remoção de Usuário por ID ------\n"
                   << "Insira o ID do usuário a ser removido: ";
         target_user_index = get_valid_user_index(users, current_capacity);
-        remove_user(users, target_user_index);
+        remove_user(users, user_amount, target_user_index);
         break;
       }
       case 6: {
@@ -551,7 +553,10 @@ void transfer_between_users(user * const &users,
             << "-----------------------------------------------------------------\n";
 }
 
-void remove_user(user * const &users, const unsigned int &user_index) {
+void remove_user(user * const &users, 
+                 unsigned int &user_amount,
+                 const unsigned int &user_index
+) {
   if(users == NULL) {
     std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
     abort();
@@ -563,6 +568,7 @@ void remove_user(user * const &users, const unsigned int &user_index) {
   }
 
   users[user_index] = {};
+  user_amount--;
 
   std::cout << "\n------ Usuário Removido com Sucesso ------\n"
             << "ID do Usuário removido: " << user_index + 1 << "\n"
