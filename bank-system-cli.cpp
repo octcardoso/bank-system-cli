@@ -16,37 +16,44 @@ typedef struct User {
   unsigned long long balance_in_cents;
 } user;
 
-unsigned int get_valid_user_index(const user* const &users, const unsigned int &current_capacity);
+// ======================= Validação de Dados =======================
 bool is_input_valid(const std::string &input, 
-                    const unsigned short int &max_integer_digits, 
-                    const unsigned short int &max_decimal_digits,
-                    bool accept_negative);
+                   unsigned short max_integer_digits, 
+                   unsigned short max_decimal_digits,
+                   bool accept_negative);
+bool is_username_valid(const std::string &name); 
+bool is_user_age_valid(const std::string &temp_input, unsigned short &age);
+bool is_monetary_value_valid(std::string &temp_input, unsigned long long &monetary_value);
+
+// ======================= Operações de Usuário =======================
+unsigned int get_valid_user_index(const user *users, unsigned int current_capacity);
 void get_user_data(std::string &name, 
                    unsigned short &age,
                    unsigned long long &balance_in_cents);
-bool is_username_valid(std::string &name); 
-bool is_user_age_valid(std::string &temp_input, unsigned short &age);
-bool is_monetary_value_valid(std::string &temp_input, unsigned long long &monetary_value);
 void register_user(user *&users, 
-                 unsigned int &current_capacity, 
-                 unsigned int &max_user_index, 
-                 const std::string &name, 
-                 const unsigned short &age, 
-                 const unsigned long long &balance_in_cents);
-void print_user_data(const user * const &users, const unsigned int &user_index);
-void transfer_between_users(user * const &users, 
-                            const unsigned int &sender_index, 
-                            const unsigned int &receiver_index, 
-                            const unsigned long long &transfer_amount);
-void remove_user(user * const &users, 
-                 unsigned int &max_user_index,
-                 const unsigned int &user_index);
-void save_users_to_file(const user * const &users, 
-                        const unsigned int &max_user_index, 
-                        const unsigned int &current_capacity);
+                   unsigned int &current_capacity, 
+                   unsigned int &last_user_index, 
+                   const std::string &name, 
+                   unsigned short age, 
+                   unsigned long long balance_in_cents);
+void print_user_data(const user *users, unsigned int user_index);
+void remove_user(user *users, 
+                 unsigned int &last_user_index,
+                 unsigned int user_index);
+
+// ======================= Operações Financeiras =======================
+void transfer_between_users(user *users, 
+                            unsigned int sender_index, 
+                            unsigned int receiver_index, 
+                            unsigned long long transfer_amount);
+
+// ======================= Persistência de Dados =======================
+void save_users_to_file(const user *users, 
+                        unsigned int last_user_index, 
+                        unsigned int current_capacity);
 void load_users_from_file(user *&users, 
-                     unsigned int &current_capacity,
-                     unsigned int &max_user_index);
+                          unsigned int &current_capacity,
+                          unsigned int &last_user_index);
 
 int main() {
   // Menu
@@ -66,12 +73,12 @@ int main() {
   }
 
   unsigned int current_capacity = INITIAL_CAPACITY;
-  unsigned int max_user_index = 0;
+  unsigned int last_user_index = 0;
   unsigned short menu_choice = 0;
   bool running = true;
 
   while(running) {
-    std::cout << "\n--------------- MENU ---------------\n"
+    std::cout << "\n=============== MENU ===============\n"
               << "1. Inserir novo usuário\n"
               << "2. Inserir vários usuários\n"
               << "3. Buscar usuário por ID\n"
@@ -79,7 +86,7 @@ int main() {
               << "5. Remover usuários por ID\n"
               << "6. Carregar arquivo para a memória\n"
               << "7. Sair e salvar\n"
-              << "------------------------------------\n\n"
+              << "====================================\n\n"
               << "Opção desejada: ";
 
     std::string menu_choice_input;
@@ -105,10 +112,10 @@ int main() {
         unsigned short age = 0;
         unsigned long long balance_in_cents = 0;
 
-        std::cout << "\n------ Inserir Novo Usuário ------\n";
+        std::cout << "\n====== Inserir Novo Usuário ======\n";
         get_user_data(name, age, balance_in_cents);
-        std::cout << "----------------------------------\n";
-        register_user(users, current_capacity, max_user_index, name, age, balance_in_cents);
+        std::cout << "=================================-\n";
+        register_user(users, current_capacity, last_user_index, name, age, balance_in_cents);
         break;
       }
       case 2: {
@@ -118,7 +125,7 @@ int main() {
         unsigned long long balance_in_cents = 0;
         unsigned int insert_amount = 0;
 
-        std::cout << "\n------------- Inserir Vários Usuários -------------\n"
+        std::cout << "\n============- Inserir Vários Usuários ============-\n"
                   << "Quantidade desejada de usuários a serem inseridos: ";
 
         std::string insert_amount_input;
@@ -142,23 +149,23 @@ int main() {
         }
 
         for(unsigned int i = 0; i < insert_amount; i++) {
-          std::cout << "\n------ Dados para Usuário " << i + 1 << " de " << insert_amount << " ------\n";
+          std::cout << "\n====== Dados para Usuário " << i + 1 << " de " << insert_amount << " ======\n";
           get_user_data(name, age, balance_in_cents);
-          std::cout << "----------------------------------------\n";
-          register_user(users, current_capacity, max_user_index, name, age, balance_in_cents);
+          std::cout << "=======================================-\n";
+          register_user(users, current_capacity, last_user_index, name, age, balance_in_cents);
         }
         break;
       }
       case 3: {
         // Bucar usuário por ID
-        if(max_user_index == 0) {
-          std::cout << "\n--- Buscar Usuário por ID ---\n"
+        if(last_user_index == 0) {
+          std::cout << "\n=== Buscar Usuário por ID ===\n"
                     << "Não há usuários registrados.\n";
           break;
         }
 
         unsigned int user_index = 0;
-        std::cout << "\n--- Buscar Usuário por ID ---\n"
+        std::cout << "\n=== Buscar Usuário por ID ===\n"
                   << "ID do usuário: ";
 
         user_index = get_valid_user_index(users, current_capacity);
@@ -171,7 +178,7 @@ int main() {
         unsigned int sender_index = 0, receiver_index = 0;
         unsigned long long transfer_amount = 0;
 
-        std::cout << "\n--- Transferência Entre Usuários ---\n"
+        std::cout << "\n=== Transferência Entre Usuários ===\n"
                   << "Insira o ID do remetente: ";
         sender_index = get_valid_user_index(users, current_capacity);
         std::cout << "Insira o ID do destinatário: ";
@@ -189,20 +196,20 @@ int main() {
       case 5: {
         // Remover usuário por ID
         unsigned int target_user_index;
-        std::cout << "\n------ Remoção de Usuário por ID ------\n"
+        std::cout << "\n====== Remoção de Usuário por ID ======\n"
                   << "Insira o ID do usuário a ser removido: ";
         target_user_index = get_valid_user_index(users, current_capacity);
-        remove_user(users, max_user_index, target_user_index);
+        remove_user(users, last_user_index, target_user_index);
         break;
       }
       case 6: {
         // Carregar arquivo para a memória
-        load_users_from_file(users, current_capacity, max_user_index);
+        load_users_from_file(users, current_capacity, last_user_index);
         break;
       }
       case 7: {
         // Sair e salvar
-        save_users_to_file(users, max_user_index, current_capacity);
+        save_users_to_file(users, last_user_index, current_capacity);
         running = false;
         break;
       }
@@ -214,45 +221,6 @@ int main() {
   }
   delete[] users;
   return 0;
-}
-
-unsigned int get_valid_user_index(const user* const &users, const unsigned int &current_capacity) {
-
-  if (users == NULL) {
-    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
-    abort();
-  }
-
-  if(current_capacity == 0) {
-    std::cerr << "Erro: capacidade de usuários é zero. Encerrando o programa...\n";
-    abort();
-  }
-
-  std::string input;
-
-  while (true) {
-
-    if (!std::getline(std::cin, input, INPUT_DELIMITER)) {
-      std::cerr << "Erro na leitura de entrada.\n";
-      continue;
-    }
-
-    if (!is_input_valid(input, 4, 0, false)) {
-      std::cout << "ID inválido. Por favor, insira um ID válido: ";
-      continue;
-    }
-
-    unsigned int user_id = std::stoi(input);
-
-    if (user_id == 0 || user_id > current_capacity) {
-      std::cout << "ID inválido. Por favor, insira um ID válido: ";
-      continue;
-    }
-
-    unsigned int user_index = user_id - 1;
-
-    return user_index;
-  }
 }
 
 /**
@@ -275,9 +243,9 @@ unsigned int get_valid_user_index(const user* const &users, const unsigned int &
  * - Parte decimal de valor zero (ex: ".000") é considerada válida
  */
 bool is_input_valid(const std::string &input, 
-  const unsigned short int &max_integer_digits, 
-  const unsigned short int &max_decimal_digits,
-  bool accept_negative
+                    unsigned short max_integer_digits, 
+                    unsigned short max_decimal_digits,
+                    bool accept_negative
 ) {
 
   if(input.empty()) return false;
@@ -333,30 +301,7 @@ bool is_input_valid(const std::string &input,
   return true;
 }
 
-void get_user_data(std::string &name,
-                   unsigned short &age,
-                   unsigned long long &balance_in_cents
-) {
-
-  do {
-    std::cout << "Insira o nome do usuário: ";
-    std::getline(std::cin, name, INPUT_DELIMITER);
-  } while(!is_username_valid(name));
-
-  std::string temp_input;
-  do {
-    std::cout << "Insira a idade do usuário: ";
-    std::getline(std::cin, temp_input, INPUT_DELIMITER);
-  } while(!is_user_age_valid(temp_input, age));
-
-  do {
-    std::cout << "Insira o saldo do usuário: ";
-    std::getline(std::cin, temp_input, INPUT_DELIMITER);
-  } while(!is_monetary_value_valid(temp_input, balance_in_cents));
-
-}
-
-bool is_username_valid(std::string &name) {
+bool is_username_valid(const std::string &name) {
   if(std::cin.fail()) {
     std::cin.clear();
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
@@ -381,7 +326,8 @@ bool is_username_valid(std::string &name) {
   return true;
 }
 
-bool is_user_age_valid(std::string &temp_input, unsigned short &age) {
+
+bool is_user_age_valid(const std::string &temp_input, unsigned short &age) {
   if(std::cin.fail()) {
     std::cin.clear();
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), INPUT_DELIMITER);
@@ -401,6 +347,7 @@ bool is_user_age_valid(std::string &temp_input, unsigned short &age) {
   }
   return true;
 }
+
 
 bool is_monetary_value_valid(std::string &temp_input, 
                              unsigned long long &monetary_value
@@ -430,12 +377,69 @@ bool is_monetary_value_valid(std::string &temp_input,
   return true;
 }
 
+unsigned int get_valid_user_index(const user *users, unsigned int current_capacity) {
+
+  if (users == NULL) {
+    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
+    abort();
+  }
+
+  std::string input;
+
+  while (true) {
+
+    if (!std::getline(std::cin, input, INPUT_DELIMITER)) {
+      std::cerr << "Erro na leitura de entrada.\n";
+      continue;
+    }
+
+    if (!is_input_valid(input, 4, 0, false)) {
+      std::cout << "ID inválido. Por favor, insira um ID válido: ";
+      continue;
+    }
+
+    unsigned int user_id = std::stoi(input);
+
+    if (user_id == 0 || user_id > current_capacity) {
+      std::cout << "ID inválido. Por favor, insira um ID válido: ";
+      continue;
+    }
+
+    unsigned int user_index = user_id - 1;
+
+    return user_index;
+  }
+}
+
+void get_user_data(std::string &name, 
+                   unsigned short &age,
+                   unsigned long long &balance_in_cents
+) {
+
+  do {
+    std::cout << "Insira o nome do usuário: ";
+    std::getline(std::cin, name, INPUT_DELIMITER);
+  } while(!is_username_valid(name));
+
+  std::string temp_input;
+  do {
+    std::cout << "Insira a idade do usuário: ";
+    std::getline(std::cin, temp_input, INPUT_DELIMITER);
+  } while(!is_user_age_valid(temp_input, age));
+
+  do {
+    std::cout << "Insira o saldo do usuário: ";
+    std::getline(std::cin, temp_input, INPUT_DELIMITER);
+  } while(!is_monetary_value_valid(temp_input, balance_in_cents));
+
+}
+
 void register_user(user *&users, 
-                 unsigned int &current_capacity, 
-                 unsigned int &max_user_index, 
-                 const std::string &name, 
-                 const unsigned short &age, 
-                 const unsigned long long &balance_in_cents
+                   unsigned int &current_capacity, 
+                   unsigned int &last_user_index, 
+                   const std::string &name, 
+                   unsigned short age, 
+                   unsigned long long balance_in_cents
 ) {
   if(users == NULL) {
     std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
@@ -447,15 +451,15 @@ void register_user(user *&users,
     abort();
   }
 
-  if(max_user_index >= current_capacity) { 
+  if(last_user_index >= current_capacity) { 
 
     user *new_vector = new user[(current_capacity * 2)];
     if(new_vector == NULL) {
-      std::cerr << "\n-------------------------- ERRO --------------------------\n"
+      std::cerr << "\n========================== ERRO ==========================\n"
                 << "Falha ao alocar memória para expandir o vetor de usuários.\n"
-                << "O usuário " << name << " com ID " << max_user_index
+                << "O usuário " << name << " com ID " << last_user_index
                 << " não pôde ser registrado.\n"
-                << "----------------------------------------------------------\n";
+                << "=========================================================-\n";
       return;
     }
 
@@ -463,11 +467,7 @@ void register_user(user *&users,
       if(!users[i].name.empty()) {
         new_vector[i] = users[i];
       } else {
-        new_vector[i] = {
-          "",
-          0,
-          0
-        };
+        new_vector[i] = {"",0,0};
       }
     }
 
@@ -476,28 +476,28 @@ void register_user(user *&users,
     users = new_vector;
   }
 
-  users[max_user_index] = {
+  users[last_user_index] = {
     name,
     age,
     balance_in_cents
   };
 
-  std::cout << "\n--------- Usuário Registrado com Sucesso ---------\n"
-            << "ID do Usuário: " << max_user_index + 1 << "\n"
-            << "Nome:  " << users[max_user_index].name << "\n"
-            << "Idade: " << users[max_user_index].age << " anos\n"
-            << "Saldo: R$ " << (users[max_user_index].balance_in_cents / 100)
+  std::cout << "\n========= Usuário Registrado com Sucesso =========\n"
+            << "ID do Usuário: " << last_user_index + 1 << "\n"
+            << "Nome:  " << users[last_user_index].name << "\n"
+            << "Idade: " << users[last_user_index].age << " anos\n"
+            << "Saldo: R$ " << (users[last_user_index].balance_in_cents / 100)
             << ",";
-  if((users[max_user_index].balance_in_cents % 100) < 10) {
+  if((users[last_user_index].balance_in_cents % 100) < 10) {
     std::cout << "0";
   }
-  std::cout << (users[max_user_index].balance_in_cents % 100) << "\n";
-  std::cout << "--------------------------------------------------\n";
+  std::cout << (users[last_user_index].balance_in_cents % 100) << "\n";
+  std::cout << "==================================================\n";
 
-  max_user_index += 1;
+  last_user_index += 1;
 }
 
-void print_user_data(const user * const &users, const unsigned int &user_index) {
+void print_user_data(const user *users, unsigned int user_index) {
   if(users == NULL) {
     std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
     abort();
@@ -508,7 +508,7 @@ void print_user_data(const user * const &users, const unsigned int &user_index) 
     return;
   }
 
-  std::cout << "\n------ Dados do Usuário (ID: " << user_index + 1 << ") ------\n"
+  std::cout << "\n====== Dados do Usuário (ID: " << user_index + 1 << ") ======\n"
             << "Nome: " << users[user_index].name << "\n"
             << "Idade: " << users[user_index].age << " anos\n"
             << "Saldo: R$ " << (users[user_index].balance_in_cents / 100)
@@ -517,13 +517,39 @@ void print_user_data(const user * const &users, const unsigned int &user_index) 
     std::cout << "0";
   }
   std::cout << (users[user_index].balance_in_cents % 100) << "\n";
-  std::cout << "---------------------------------------\n";
+  std::cout << "=======================================\n";
 }
 
-void transfer_between_users(user * const &users, 
-                            const unsigned int &sender_index, 
-                            const unsigned int &receiver_index, 
-                            const unsigned long long &transfer_amount
+void remove_user(user *users, 
+                 unsigned int &last_user_index,
+                 unsigned int user_index
+) {
+  if(users == NULL) {
+    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
+    abort();
+  }
+
+  if(users[user_index].name.empty()) {
+    std::cout << "O usuário com ID " << user_index + 1 << " já está vazio.\n";
+    return;
+  }
+
+  std::string deleted_user_name = users[user_index].name;
+
+  users[user_index] = {"", 0, 0};
+
+  if(user_index == last_user_index - 1) last_user_index--;
+
+  std::cout << "\n====== Usuário Removido com Sucesso ======\n"
+            << "Nome: " << deleted_user_name << "\n"
+            << "ID:   " << user_index + 1 << "\n"
+            << "==========================================\n";
+}
+
+void transfer_between_users(user *users, 
+                            unsigned int sender_index, 
+                            unsigned int receiver_index, 
+                            unsigned long long transfer_amount
 ) {
   if(users == NULL) {
     std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
@@ -531,7 +557,7 @@ void transfer_between_users(user * const &users,
   }
   
   if(sender_index == receiver_index) {
-    std::cout << "Você não pode fazer uma transferencia para si mesmo.\n"
+    std::cout << "Não é possível realizar transferências para o próprio usuário.\n"
               << "Transferencia cancelada.\n";
     return;
   }
@@ -557,46 +583,20 @@ void transfer_between_users(user * const &users,
   users[sender_index].balance_in_cents -= transfer_amount;
   users[receiver_index].balance_in_cents += transfer_amount;
 
-  std::cout << "\n-------------- Transferência Realizada com Sucesso --------------\n"
-            << "Valor: R$ " << (transfer_amount / 100)
-            << ",";
+  std::cout << "\n============== Transferência Realizada com Sucesso ==============\n"
+            << "Valor: R$ " << (transfer_amount / 100) << ",";
   if((transfer_amount % 100) < 10) {
     std::cout << "0";
   }
   std::cout << (transfer_amount % 100) << "\n"
-            << "De: " << users[sender_index].name << ", ID: " << sender_index + 1 << "\n"
-            << "Para: " << users[receiver_index].name << ", ID: " << receiver_index + 1 << "\n"
-            << "-----------------------------------------------------------------\n";
+            << "Remetente: " << users[sender_index].name << "( ID: " << sender_index + 1 << " )\n"
+            << "Para: " << users[receiver_index].name << "( ID: " << receiver_index + 1 << " )\n"
+            << "=================================================================\n";
 }
 
-void remove_user(user * const &users, 
-                 unsigned int &max_user_index,
-                 const unsigned int &user_index
-) {
-  if(users == NULL) {
-    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
-    abort();
-  }
-
-  if(users[user_index].name.empty()) {
-    std::cout << "O usuário com ID " << user_index + 1 << " já está vazio.\n";
-    return;
-  }
-
-  users[user_index] = {
-    "",
-    0,
-    0
-  };
-
-  std::cout << "\n------ Usuário Removido com Sucesso ------\n"
-            << "ID do Usuário removido: " << user_index + 1 << "\n"
-            << "------------------------------------------\n";
-}
-
-void save_users_to_file(const user * const &users, 
-                        const unsigned int &max_user_index, 
-                        const unsigned int &current_capacity
+void save_users_to_file(const user *users, 
+                        unsigned int last_user_index, 
+                        unsigned int current_capacity
 ) {
   if(users == NULL) {
     std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
@@ -606,14 +606,13 @@ void save_users_to_file(const user * const &users,
   std::ofstream file("users.txt", std::ios::out);
 
   if(file.fail()) {
-    std::cout << "Erro ao escrever \"users.txt\".\n";
+    std::cerr << "Erro ao escrever arquivo \"users.txt\".\n";
     file.close();
     return;
   }
 
   unsigned int user_amount = 0;
-  std::string users_data;
-  std::ostringstream oss_users_data(users_data);
+  std::ostringstream oss_users_data;
 
   for(unsigned int i = 0; i < current_capacity; i++) {
     if(!users[i].name.empty()) {
@@ -628,14 +627,23 @@ void save_users_to_file(const user * const &users,
       oss_users_data << (users[i].balance_in_cents % 100) << "\n";
     }
   }
+
   file << user_amount << '\n';
   file << oss_users_data.str();
+
+  if(file.fail()) {
+    std::cerr << "Erro durante escrita do arquivo \"users.txt\".\n";
+    file.close();
+    return;
+  }
+
   file.close();
+  std::cout << "Dados salvos com sucesso em \"users.txt\".\n";
 }
 
 void load_users_from_file(user *&users, 
-                     unsigned int &current_capacity,
-                     unsigned int &max_user_index
+                          unsigned int &current_capacity,
+                          unsigned int &last_user_index
 ) {
   if(users == NULL) {
     std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
@@ -645,14 +653,12 @@ void load_users_from_file(user *&users,
   std::ifstream file("users.txt", std::ios::in);
 
   if(file.fail()) {
-    std::cout << "Arquivo users.txt não encontrado.\n";
+    std::cerr << "Arquivo users.txt não encontrado.\n";
     file.close();
     return;
   }
 
   std::string temp;
-
-  // unsigned short total_users;
 
   if(!std::getline(file, temp)) {
     std::cerr << "Erro: não foi possível extrair a quantidade de usuários.\n";
@@ -661,48 +667,43 @@ void load_users_from_file(user *&users,
   }
 
   if(!is_input_valid(temp, 6, 0, false)) {
-    std::cerr << "Erro: não foi possível extrair a quantidade de usuários.\n";
+    std::cerr << "Erro: formato inválido para total de usuários.\n";
     file.close();
     return;
   }
 
-  // total_users = static_cast<unsigned short>(std::stoi(temp));
-
   std::string line;
+  unsigned int line_number = 0;
 
   std::string name;
   unsigned short age;
   unsigned long long balance_in_cents;
 
-  while(file) {
-    std::getline(file, line);
-
+  while(std::getline(file, line)) {
+    line_number++;
     if(line.empty()) continue;
 
     std::istringstream ss(line);
 
     if(!std::getline(ss, name, ',')) {
-      std::cout << "Erro: não foi possível extrair o nome." << std::endl;
+      std::cerr << "Erro: não foi possível extrair o nome. Linha: " << line_number << ".\n";
       return;
     }
-    
     if(!is_username_valid(name)) return;
     
     if(!std::getline(ss, temp, ',')) {
-      std::cout << "Erro: não foi possível extrair a idade." << std::endl;
+      std::cerr << "Erro: não foi possível extrair a idade. Linha: " << line_number << ".\n";
       return;
     }
-
     if(!is_user_age_valid(temp, age)) return;
 
     if(!std::getline(ss, temp, ',')) {
-      std::cout << "Erro: não foi possível extrair o saldo." << std::endl;
+      std::cerr << "Erro: não foi possível extrair o saldo. Linha: " << line_number << ".\n";
       return;
     }
-
     if(!is_monetary_value_valid(temp, balance_in_cents)) return;
 
-    register_user(users, current_capacity, max_user_index, name, age, balance_in_cents);
+    register_user(users, current_capacity, last_user_index, name, age, balance_in_cents);
   }
 
   if(!file.eof()) {
