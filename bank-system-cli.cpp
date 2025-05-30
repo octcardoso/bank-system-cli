@@ -52,8 +52,8 @@ void save_users_to_file(const user *users,
                         unsigned int last_user_index, 
                         unsigned int current_capacity);
 void load_users_from_file(user *&users, 
-                          unsigned int &current_capacity,
-                          unsigned int &last_user_index);
+                          unsigned int &last_user_index,
+                          unsigned int &current_capacity);
 
 int main() {
   // Menu
@@ -204,7 +204,7 @@ int main() {
       }
       case 6: {
         // Carregar arquivo para a memória
-        load_users_from_file(users, current_capacity, last_user_index);
+        load_users_from_file(users, last_user_index, current_capacity);
         break;
       }
       case 7: {
@@ -229,18 +229,17 @@ int main() {
  * Verifica se:
  * - Formato numérico válido (dígitos, sinal e ponto decimal)
  * - Quantidade máxima de dígitos nas partes inteira e decimal
- * - Eliminação de zeros insignificantes
  * 
  * @param input String da entrada a ser validada
  * @param max_integer_digits Número máximo permitido de dígitos na parte inteira
  * @param max_decimal_digits Número máximo permitido de dígitos na parte decimal
+ * @param accept_negative Aceita entrada de números negativos ?
  * @return bool true se a entrada for válida, false caso contrário
  * 
  * @note Comportamentos especiais:
  * - Sinais (+/-) são opcionais e removidos antes da validação
  * - Zeros insignificantes à esquerda na parte inteira são ignorados
- * - Zeros insignificantes à direita na parte decimal são ignorados
- * - Parte decimal de valor zero (ex: ".000") é considerada válida
+ * - Zeros insignificantes à direita na parte decimal não são ignorados
  */
 bool is_input_valid(const std::string &input, 
                     unsigned short max_integer_digits, 
@@ -301,6 +300,19 @@ bool is_input_valid(const std::string &input,
   return true;
 }
 
+/**
+ * @brief Valida o nome do usuário.
+ * 
+ * @param name Nome a ser validado
+ * @return true se válido, false se inválido
+ * 
+ * @note Critérios:
+ * - Sem falhas de leitura
+ * - Não vazio
+ * - Sem vírgulas
+ * - Tamanho <= MAX_NAME_LENGTH
+ * @note Exibe mensagens de erro específicas para cada critério
+ */
 bool is_username_valid(const std::string &name) {
   if(std::cin.fail()) {
     std::cin.clear();
@@ -326,7 +338,19 @@ bool is_username_valid(const std::string &name) {
   return true;
 }
 
-
+/**
+ * @brief Valida e converte idade do usuário.
+ * 
+ * @param temp_input Entrada de texto
+ * @param age Idade convertida
+ * @return true se válido, false se inválido
+ * 
+ * @note Critérios:
+ * - Sem falhas de leitura
+ * - Formato numérico válido
+ * - Entre MIN_USER_AGE e MAX_USER_AGE
+ * @note Usa is_input_valid() para verificação de inteiros, decimais e sinal
+ */
 bool is_user_age_valid(const std::string &temp_input, unsigned short &age) {
   if(std::cin.fail()) {
     std::cin.clear();
@@ -348,7 +372,19 @@ bool is_user_age_valid(const std::string &temp_input, unsigned short &age) {
   return true;
 }
 
-
+/**
+ * @brief Valida e converte valor monetário para centavos.
+ * 
+ * @param temp_input Entrada de texto
+ * @param[out] monetary_value Valor em centavos
+ * @return true se válido, false se inválido
+ * 
+ * @note Critérios:
+ * - Sem falhas de leitura
+ * - Formato válido (até 10 dígitos + 2 decimais)
+ * - Converte removendo ponto decimal ou multiplicando por 100
+ * @note Usa is_input_valid() para verificação de inteiros, decimais e sinal
+ */
 bool is_monetary_value_valid(std::string &temp_input, 
                              unsigned long long &monetary_value
 ) {
@@ -377,13 +413,20 @@ bool is_monetary_value_valid(std::string &temp_input,
   return true;
 }
 
+/**
+ * @brief Obtém um índice do vetor de usuários válido via entrada padrão.
+ * 
+ * @param users Vetor de usuários
+ * @param current_capacity Capacidade atual do vetor
+ * 
+ * @return Índice válido correspondente ao ID fornecido
+ * 
+ * @note Valida:
+ *   - Formato numérico da entrada
+ *   - Intervalo válido (1 até current_capacity)
+ *   - Conversão de ID para índice (ID-1)
+ */
 unsigned int get_valid_user_index(const user *users, unsigned int current_capacity) {
-
-  if (users == NULL) {
-    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
-    abort();
-  }
-
   std::string input;
 
   while (true) {
@@ -411,6 +454,16 @@ unsigned int get_valid_user_index(const user *users, unsigned int current_capaci
   }
 }
 
+/**
+ * @brief Solicita e valida dados de um usuário via entrada padrão.
+ * 
+ * @param name Nome do usuário
+ * @param age Idade do usuário
+ * @param balance_in_cents Saldo em centavos
+ * 
+ * @note Repete cada solicitação até obter entrada válida
+ * @note Usa funções específicas para validação de cada campo
+ */
 void get_user_data(std::string &name, 
                    unsigned short &age,
                    unsigned long long &balance_in_cents
@@ -434,6 +487,20 @@ void get_user_data(std::string &name,
 
 }
 
+/**
+ * @brief Registra um novo usuário no vetor dinâmico.
+ * 
+ * @param users Vetor de usuários (pode ser realocado)
+ * @param current_capacity Capacidade atual (dobrada se necessário)
+ * @param last_user_index Último índice livre (incrementado após registro)
+ * @param name Nome do novo usuário
+ * @param age Idade do novo usuário
+ * @param balance_in_cents Saldo inicial em centavos
+ * 
+ * @note Expande o array (dobrando capacidade) se necessário
+ * @note Exibe mensagem de erro em falha de alocação
+ * @note Exibe mensagem de confirmação com detalhes do usuário registrado
+ */
 void register_user(user *&users, 
                    unsigned int &current_capacity, 
                    unsigned int &last_user_index, 
@@ -441,16 +508,6 @@ void register_user(user *&users,
                    unsigned short age, 
                    unsigned long long balance_in_cents
 ) {
-  if(users == NULL) {
-    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
-    abort();
-  }
-
-  if(current_capacity == 0) {
-    std::cerr << "Erro: capacidade de usuários é zero. Encerrando o programa...\n";
-    abort();
-  }
-
   if(last_user_index >= current_capacity) { 
 
     user *new_vector = new user[(current_capacity * 2)];
@@ -497,12 +554,13 @@ void register_user(user *&users,
   last_user_index += 1;
 }
 
+/**
+ * @brief Exibe os dados de um usuário.
+ * 
+ * @param users Vetor de usuários
+ * @param user_index Índice do usuário
+ */
 void print_user_data(const user *users, unsigned int user_index) {
-  if(users == NULL) {
-    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
-    abort();
-  }
-
   if(users[user_index].name.empty()) {
     std::cout << "O usuário com ID " << user_index + 1 << " não existe ou foi deletado.\n";
     return;
@@ -520,15 +578,19 @@ void print_user_data(const user *users, unsigned int user_index) {
   std::cout << "=======================================\n";
 }
 
+/**
+ * @brief Remove um usuário do vetor.
+ * 
+ * @param users Vetor de usuários
+ * @param last_user_index Último índice válido
+ * @param user_index Índice do usuário a remover
+ * 
+ * @note Atualiza last_user_index se o usuário removido for o último
+ */
 void remove_user(user *users, 
                  unsigned int &last_user_index,
                  unsigned int user_index
 ) {
-  if(users == NULL) {
-    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
-    abort();
-  }
-
   if(users[user_index].name.empty()) {
     std::cout << "O usuário com ID " << user_index + 1 << " já está vazio.\n";
     return;
@@ -546,16 +608,25 @@ void remove_user(user *users,
             << "==========================================\n";
 }
 
+/**
+ * @brief Realiza transferência entre dois usuários.
+ * 
+ * @param users Vetor de usuários
+ * @param sender_index Índice do usuário remetente
+ * @param receiver_index Índice do usuário destinatário
+ * @param transfer_amount Valor a transferir (em centavos)
+ * 
+ * @note Validações realizadas:
+ * - Não permite auto-transferência
+ * - Verifica existência dos usuários
+ * - Confere saldo suficiente do remetente
+ * @note Atualiza saldos e exibe confirmação em caso de sucesso
+ */
 void transfer_between_users(user *users, 
                             unsigned int sender_index, 
                             unsigned int receiver_index, 
                             unsigned long long transfer_amount
 ) {
-  if(users == NULL) {
-    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
-    abort();
-  }
-  
   if(sender_index == receiver_index) {
     std::cout << "Não é possível realizar transferências para o próprio usuário.\n"
               << "Transferencia cancelada.\n";
@@ -594,15 +665,21 @@ void transfer_between_users(user *users,
             << "=================================================================\n";
 }
 
+/**
+ * @brief Salva os usuários em um arquivo de texto "users.txt".
+ * 
+ * @param users Vetor de usuários a ser salvo
+ * @param last_user_index Último índice válido do vetor
+ * @param current_capacity Capacidade atual do vetor
+ * 
+ * @note Formato do arquivo:
+ *   - 1ª linha: total de usuários
+ *   - Demais linhas: "Nome,Idade,Saldo" (saldo em formato real.centavos)
+ */
 void save_users_to_file(const user *users, 
                         unsigned int last_user_index, 
                         unsigned int current_capacity
 ) {
-  if(users == NULL) {
-    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
-    abort();
-  }
-
   std::ofstream file("users.txt", std::ios::out);
 
   if(file.fail()) {
@@ -641,15 +718,23 @@ void save_users_to_file(const user *users,
   std::cout << "Dados salvos com sucesso em \"users.txt\".\n";
 }
 
+/**
+ * @brief Carrega usuários do arquivo "users.txt" para o vetor dinâmico.
+ * 
+ * Lê e valida os dados dos usuários no arquivo, registrando-os no vetor. 
+ * O arquivo deve ter: 1a linha com total de usuários e demais linhas 
+ * no formato "Nome,Idade,Saldo".
+ * 
+ * @param users Vetor dinâmico de usuários
+ * @param last_user_index Último índice válido do vetor
+ * @param current_capacity Capacidade atual do vetor
+ * 
+ * @note Em caso de erro no arquivo ou dados inválidos, exibe mensagem e aborta o carregamento.
+ */
 void load_users_from_file(user *&users, 
-                          unsigned int &current_capacity,
-                          unsigned int &last_user_index
+                          unsigned int &last_user_index,
+                          unsigned int &current_capacity
 ) {
-  if(users == NULL) {
-    std::cerr << "Problema na inicialização dos usuários. Encerrando o programa...\n";
-    abort();
-  }
-  
   std::ifstream file("users.txt", std::ios::in);
 
   if(file.fail()) {
