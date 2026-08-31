@@ -14,3 +14,9 @@ Toda a documentação do código-fonte deste projeto é gerada utilizando o padr
 **Doxygen** é uma ferramenta de geração de documentação para diversas linguagens de programação, incluindo C++. 
 Ele funciona escaneando os arquivos de código-fonte em busca de comentários escritos em um formato específico. 
 A partir desses comentários, o Doxygen consegue gerar automaticamente documentação sobre a estrutura do código.
+
+---
+
+## Nota
+
+Este projeto foi originalmente desenvolvido em 2025 e migrado para este repositório em 2026. O histórico de commits foi preservado.
